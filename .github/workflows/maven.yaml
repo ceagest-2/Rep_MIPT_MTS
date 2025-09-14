@@ -1,0 +1,14 @@
+name: Simple Maven job
+
+on:
+  push:
+    branches: ["main", "feature/hw1-gitactions", "feature/hw2-maven"]
+  pull_request:
+    branches: ["main", "feature/hw1-gitactions", "feature/hw2-maven"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run package with Maven
+        run: mvn package
