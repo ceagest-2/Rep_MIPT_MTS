@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+app:
+  name: "Todo MVP"
+  version: "1.0.0"
+
+spring:
+  profiles:
+    active: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+logging:
+  level:
+    root: DEBUG
+    com.example.todo: DEBUG
+app:
+  log-details: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+logging:
+  level:
+    root: INFO
+    com.example.todo: WARN
+app:
+  log-details: false
