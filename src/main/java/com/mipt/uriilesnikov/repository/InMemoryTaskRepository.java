@@ -1,6 +1,7 @@
 package com.mipt.uriilesnikov.repository;
 
 import com.mipt.uriilesnikov.model.Task;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The main repository that stores data in memory.
  * Marked as @Primary for default use.
  */
+@Primary
 @Repository
 public class InMemoryTaskRepository implements TaskRepository {
 
