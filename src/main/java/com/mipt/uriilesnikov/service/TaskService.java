@@ -1,19 +1,22 @@
 package com.mipt.uriilesnikov.service;
 
-import com.mipt.uriilesnikov.exception.TaskNotFoundException;
-import com.mipt.uriilesnikov.model.Task;
-import com.mipt.uriilesnikov.repository.TaskRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.mipt.uriilesnikov.exception.TaskNotFoundException;
+import com.mipt.uriilesnikov.model.Task;
+import com.mipt.uriilesnikov.repository.TaskRepository;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 /**
  * The main task management service.
