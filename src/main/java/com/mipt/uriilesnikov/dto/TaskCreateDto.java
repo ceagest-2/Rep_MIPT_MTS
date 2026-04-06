@@ -1,16 +1,17 @@
 package com.mipt.uriilesnikov.dto;
 
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import com.mipt.uriilesnikov.model.Priority;
 import com.mipt.uriilesnikov.validation.OnCreate;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 @Schema(description = "DTO for creating a task")
 public class TaskCreateDto {
