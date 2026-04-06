@@ -2,22 +2,75 @@ package com.mipt.uriilesnikov.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 /**
  * Task model for the to-do list.
  */
+@Entity
+@Table(name = "tasks")
+@EntityListeners(AuditingEntityListener.class)
 public class Task {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
+
+    @Column(name = "description", length = 500)
     private String description;
+
+    @Column(name = "completed", nullable = false)
     private boolean completed;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "last_modified_at")
+    private LocalDateTime lastModifiedAt;
+
+    @Column(name = "due_date")
     private LocalDate dueDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false, length = 16)
     private Priority priority;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "tag", nullable = false, length = 64)
     private Set<String> tags = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<TaskAttachment> attachments = new ArrayList<>();
 
     public Task() {
     }
@@ -41,7 +94,7 @@ public class Task {
         this.createdAt = createdAt;
         this.dueDate = dueDate;
         this.priority = priority;
-        setTags(tags);
+        this.tags = (tags == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(tags);
     }
 
     public Long getId() {
@@ -84,6 +137,14 @@ public class Task {
         this.createdAt = createdAt;
     }
 
+    public LocalDateTime getLastModifiedAt() {
+        return lastModifiedAt;
+    }
+
+    public void setLastModifiedAt(LocalDateTime lastModifiedAt) {
+        this.lastModifiedAt = lastModifiedAt;
+    }
+
     public LocalDate getDueDate() {
         return dueDate;
     }
@@ -108,24 +169,28 @@ public class Task {
         this.tags = (tags == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(tags);
     }
 
+    public List<TaskAttachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<TaskAttachment> attachments) {
+        this.attachments = (attachments == null) ? new ArrayList<>() : new ArrayList<>(attachments);
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Task task = (Task) o;
-        return completed == task.completed
-                && Objects.equals(id, task.id)
-                && Objects.equals(title, task.title)
-                && Objects.equals(description, task.description)
-                && Objects.equals(createdAt, task.createdAt)
-                && Objects.equals(dueDate, task.dueDate)
-                && priority == task.priority
-                && Objects.equals(tags, task.tags);
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Task task)) {
+            return false;
+        }
+        return id != null && Objects.equals(id, task.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, description, completed, createdAt, dueDate, priority, tags);
+        return Objects.hashCode(id);
     }
 
     @Override
@@ -136,6 +201,7 @@ public class Task {
                 ", description='" + description + '\'' +
                 ", completed=" + completed +
                 ", createdAt=" + createdAt +
+                ", lastModifiedAt=" + lastModifiedAt +
                 ", dueDate=" + dueDate +
                 ", priority=" + priority +
                 ", tags=" + tags +
