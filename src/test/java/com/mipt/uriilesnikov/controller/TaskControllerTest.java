@@ -1,106 +1,139 @@
 package com.mipt.uriilesnikov.controller;
 
-import com.mipt.uriilesnikov.model.Task;
+import java.time.LocalDate;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.notNullValue;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Integration tests for TaskController.
- * Uses @SpringBootTest and TestRestTemplate.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class TaskControllerTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
 
-    @Test
-    public void testGetAllTasks_Positive() {
-        ResponseEntity<Task[]> response = restTemplate.getForEntity("/api/tasks", Task[].class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private String validCreatePayload;
+
+    @BeforeEach
+    void setUp() {
+        validCreatePayload = """
+                {
+                  "title": "Prepare report",
+                  "description": "Quarterly report",
+                  "dueDate": "%s",
+                  "priority": "HIGH",
+                  "tags": ["work", "report"]
+                }
+                """.formatted(LocalDate.now().plusDays(2));
     }
 
     @Test
-    public void testGetAllTasks_Negative() {
-        // Negative scenario: incorrect method (PUT instead of GET)
-        ResponseEntity<String> response = restTemplate.exchange("/api/tasks", HttpMethod.PUT, null, String.class);
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
+    void createGetUpdateDeleteTask_flow() throws Exception {
+        MvcResult createResult = mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validCreatePayload))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("X-API-Version", "2.0.0"))
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.createdAt", notNullValue()))
+                .andReturn();
+
+        JsonNode created = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        long id = created.get("id").asLong();
+
+        mockMvc.perform(get("/api/tasks/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Prepare report"));
+
+        mockMvc.perform(put("/api/tasks/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Prepare final report",
+                                  "completed": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Prepare final report"))
+                .andExpect(jsonPath("$.completed").value(true));
+
+        mockMvc.perform(delete("/api/tasks/{id}", id))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/tasks/{id}", id))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    public void testGetTaskById_Positive() {
-        Task newTask = new Task(null, "Test", "Desc", false);
-        ResponseEntity<Task> createResponse = restTemplate.postForEntity("/api/tasks", newTask, Task.class);
-        Long id = createResponse.getBody().getId();
+    void getAllTasks_shouldContainTotalCountHeader() throws Exception {
+        mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validCreatePayload)).andExpect(status().isCreated());
 
-        ResponseEntity<Task> response = restTemplate.getForEntity("/api/tasks/" + id, Task.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Test", response.getBody().getTitle());
+        mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("X-Total-Count"))
+                .andExpect(header().string("X-API-Version", "2.0.0"))
+                .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(1)));
     }
 
     @Test
-    public void testGetTaskById_Negative() {
-        ResponseEntity<Task> response = restTemplate.getForEntity("/api/tasks/9999", Task.class);
-        assertNotEquals(HttpStatus.OK, response.getStatusCode());
+    void createTask_shouldFailValidation() throws Exception {
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "ab",
+                                  "priority": null
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.details.title", notNullValue()))
+                .andExpect(jsonPath("$.details.priority", notNullValue()));
     }
 
     @Test
-    public void testCreateTask_Positive() {
-        Task task = new Task(null, "New Task", "Description", false);
-        ResponseEntity<Task> response = restTemplate.postForEntity("/api/tasks", task, Task.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody().getId());
-    }
+    void updateTask_shouldFailWhenDueDateBeforeCreation() throws Exception {
+        MvcResult createResult = mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validCreatePayload))
+                .andExpect(status().isCreated())
+                .andReturn();
 
-    @Test
-    public void testCreateTask_Negative() {
-        // Empty request body
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>("", headers);
-        ResponseEntity<String> response = restTemplate.exchange("/api/tasks", HttpMethod.POST, entity, String.class);
-        // We expect a deserialization error or 400
-        assertNotEquals(HttpStatus.OK, response.getStatusCode());
-    }
+        long id = objectMapper.readTree(createResult.getResponse().getContentAsString()).get("id").asLong();
 
-    @Test
-    public void testUpdateTask_Positive() {
-        Task newTask = new Task(null, "Update Test", "Desc", false);
-        ResponseEntity<Task> createResponse = restTemplate.postForEntity("/api/tasks", newTask, Task.class);
-        Long id = createResponse.getBody().getId();
-
-        Task updateTask = new Task(id, "Updated", "New Desc", true);
-        ResponseEntity<Task> response = restTemplate.exchange("/api/tasks/" + id, HttpMethod.PUT, new HttpEntity<>(updateTask), Task.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Updated", response.getBody().getTitle());
-    }
-
-    @Test
-    public void testUpdateTask_Negative() {
-        Task updateTask = new Task(9999L, "Updated", "New Desc", true);
-        ResponseEntity<Task> response = restTemplate.exchange("/api/tasks/9999", HttpMethod.PUT, new HttpEntity<>(updateTask), Task.class);
-        assertNotEquals(HttpStatus.OK, response.getStatusCode());
-    }
-
-    @Test
-    public void testDeleteTask_Positive() {
-        Task newTask = new Task(null, "Delete Test", "Desc", false);
-        ResponseEntity<Task> createResponse = restTemplate.postForEntity("/api/tasks", newTask, Task.class);
-        Long id = createResponse.getBody().getId();
-
-        ResponseEntity<Void> response = restTemplate.exchange("/api/tasks/" + id, HttpMethod.DELETE, null, Void.class);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-    }
-
-    @Test
-    public void testDeleteTask_Negative() {
-        ResponseEntity<Void> response = restTemplate.exchange("/api/tasks/9999", HttpMethod.DELETE, null, Void.class);
-        assertNotNull(response);
+        mockMvc.perform(put("/api/tasks/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dueDate": "2000-01-01"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.details.dueDate", notNullValue()));
     }
 }
