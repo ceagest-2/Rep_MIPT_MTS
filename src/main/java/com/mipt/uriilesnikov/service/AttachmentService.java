@@ -1,16 +1,5 @@
 package com.mipt.uriilesnikov.service;
 
-import com.mipt.uriilesnikov.exception.AttachmentNotFoundException;
-import com.mipt.uriilesnikov.model.TaskAttachment;
-import com.mipt.uriilesnikov.repository.TaskAttachmentRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -19,6 +8,18 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.mipt.uriilesnikov.exception.AttachmentNotFoundException;
+import com.mipt.uriilesnikov.model.TaskAttachment;
+import com.mipt.uriilesnikov.repository.TaskAttachmentRepository;
 
 /**
  * Handles file storage and metadata persistence for task attachments.

@@ -1,14 +1,15 @@
 package com.mipt.uriilesnikov.repository;
 
-import com.mipt.uriilesnikov.model.TaskAttachment;
-import org.springframework.stereotype.Repository;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.springframework.stereotype.Repository;
+
+import com.mipt.uriilesnikov.model.TaskAttachment;
 
 /**
  * In-memory metadata repository for task attachments.

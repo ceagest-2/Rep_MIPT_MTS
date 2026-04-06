@@ -1,9 +1,9 @@
 package com.mipt.uriilesnikov.repository;
 
-import com.mipt.uriilesnikov.model.TaskAttachment;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.mipt.uriilesnikov.model.TaskAttachment;
 
 /**
  * Repository for task attachment metadata.
