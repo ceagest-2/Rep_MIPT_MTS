@@ -1,16 +1,15 @@
 package com.mipt.uriilesnikov.repository;
 
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.mipt.uriilesnikov.model.TaskAttachment;
 
 /**
- * Repository for task attachment metadata.
+ * JPA repository for task attachment metadata.
  */
-public interface TaskAttachmentRepository {
-    TaskAttachment save(TaskAttachment attachment);
-    Optional<TaskAttachment> findById(Long id);
-    List<TaskAttachment> findByTaskId(Long taskId);
-    void deleteById(Long id);
+public interface TaskAttachmentRepository extends JpaRepository<TaskAttachment, Long> {
+
+    List<TaskAttachment> findByTask_Id(Long taskId);
 }
