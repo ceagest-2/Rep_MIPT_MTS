@@ -15,7 +15,9 @@ public interface TaskMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "lastModifiedAt", ignore = true)
     @Mapping(target = "completed", constant = "false")
+    @Mapping(target = "attachments", ignore = true)
     Task toEntity(TaskCreateDto dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

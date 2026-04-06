@@ -1,65 +1,51 @@
 package com.mipt.uriilesnikov.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mipt.uriilesnikov.exception.TaskNotFoundException;
+import com.mipt.uriilesnikov.exception.TasksBulkCompletionException;
+import com.mipt.uriilesnikov.model.Priority;
 import com.mipt.uriilesnikov.model.Task;
 import com.mipt.uriilesnikov.repository.TaskRepository;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-
 /**
- * The main task management service.
- * Demonstrates lifecycle (@PostConstruct, @PreDestroy) and @Value injection.
+ * Main task management service backed by JPA repositories.
  */
 @Service
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final Map<Long, Task> taskCache = new HashMap<>();
-
-    @Value("${app.name}")
-    private String appName;
-
-    @Value("${app.version}")
-    private String appVersion;
 
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
     }
 
-    /**
-     * Initializing the cache at application startup.
-     */
-    @PostConstruct
-    public void init() {
-        System.out.println(" [TaskService] Initializing cache for app: " + appName + " v" + appVersion);
-        List<Task> tasks = taskRepository.findAll();
-        for (Task task : tasks) {
-            taskCache.put(task.getId(), task);
-        }
-    }
-
-    /**
-     * Cleaning up resources before destroying the bean.
-     */
-    @PreDestroy
-    public void cleanup() {
-        System.out.println(" [TaskService] Cleaning up. Tasks in cache: " + taskCache.size());
-    }
-
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
+    }
+
+    public List<Task> getAllTasksWithAttachments() {
+        return taskRepository.findAllWithAttachments();
+    }
+
+    public List<Task> getTasksByCompletedAndPriority(boolean completed, Priority priority) {
+        return taskRepository.findByCompletedAndPriority(completed, priority);
+    }
+
+    public List<Task> getTasksDueInNext7Days() {
+        LocalDate today = LocalDate.now();
+        return taskRepository.findTasksDueBetween(today, today.plusDays(7));
     }
 
     public long getTotalCount() {
@@ -74,6 +60,7 @@ public class TaskService {
         if (task.getCreatedAt() == null) {
             task.setCreatedAt(LocalDateTime.now());
         }
+        task.setCompleted(false);
         if (task.getTags() == null) {
             task.setTags(new LinkedHashSet<>());
         }
@@ -81,9 +68,10 @@ public class TaskService {
     }
 
     public Task save(Task task) {
-        Task saved = taskRepository.save(task);
-        taskCache.put(saved.getId(), saved);
-        return saved;
+        if (task.getTags() == null) {
+            task.setTags(new LinkedHashSet<>());
+        }
+        return taskRepository.save(task);
     }
 
     public Task updateTask(Long id, Task taskDetails) {
@@ -97,11 +85,38 @@ public class TaskService {
     }
 
     public List<Task> getTasksByIds(Set<Long> ids) {
-        List<Task> tasks = new ArrayList<>();
-        for (Long id : ids) {
-            taskRepository.findById(id).ifPresent(tasks::add);
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
         }
-        return tasks;
+        return taskRepository.findAllById(ids);
+    }
+
+    @Transactional(
+            propagation = Propagation.REQUIRED,
+            isolation = Isolation.READ_COMMITTED,
+            rollbackFor = TasksBulkCompletionException.class
+    )
+    public List<Task> bulkCompleteTasks(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> uniqueIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        List<Task> tasks = taskRepository.findAllById(uniqueIds);
+        Set<Long> foundIds = tasks.stream().map(Task::getId).collect(Collectors.toSet());
+        List<Long> missingIds = uniqueIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .toList();
+
+        if (!missingIds.isEmpty()) {
+            throw new TasksBulkCompletionException(missingIds);
+        }
+
+        tasks.forEach(task -> task.setCompleted(true));
+        return taskRepository.saveAll(tasks);
     }
 
     public void deleteTask(Long id) {
@@ -109,6 +124,5 @@ public class TaskService {
             throw new TaskNotFoundException(id);
         }
         taskRepository.deleteById(id);
-        taskCache.remove(id);
     }
 }

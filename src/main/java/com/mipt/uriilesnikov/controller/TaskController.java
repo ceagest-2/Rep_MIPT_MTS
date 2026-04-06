@@ -109,6 +109,21 @@ public class TaskController {
         return ResponseEntity.ok(taskMapper.toResponseDto(updatedTask));
     }
 
+        @Operation(summary = "Bulk complete tasks")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Tasks marked as completed"),
+                        @ApiResponse(responseCode = "404", description = "One or more tasks not found",
+                                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        @PostMapping("/bulk-complete")
+        public ResponseEntity<List<TaskResponseDto>> bulkCompleteTasks(@RequestBody List<Long> ids) {
+                List<TaskResponseDto> completedTasks = taskService.bulkCompleteTasks(ids)
+                                .stream()
+                                .map(taskMapper::toResponseDto)
+                                .toList();
+                return ResponseEntity.ok(completedTasks);
+        }
+
     @Operation(summary = "Delete task")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Task deleted"),

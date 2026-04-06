@@ -105,6 +105,17 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request, Map.of());
     }
 
+    @ExceptionHandler(TasksBulkCompletionException.class)
+    public ResponseEntity<ErrorResponse> handleBulkCompletionException(TasksBulkCompletionException ex,
+                                                                       HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request,
+                Map.of("missingTaskIds", ex.getMissingTaskIds())
+        );
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex,
                                                                HttpServletRequest request) {
