@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mipt.uriilesnikov.exception.AttachmentNotFoundException;
+import com.mipt.uriilesnikov.model.Task;
 import com.mipt.uriilesnikov.model.TaskAttachment;
 import com.mipt.uriilesnikov.repository.TaskAttachmentRepository;
 
@@ -45,7 +46,7 @@ public class AttachmentService {
     }
 
     public TaskAttachment storeAttachment(Long taskId, MultipartFile file) {
-        taskService.getTaskById(taskId);
+        Task task = taskService.getTaskById(taskId);
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Attachment file must not be empty");
@@ -73,7 +74,7 @@ public class AttachmentService {
         }
 
         TaskAttachment attachment = new TaskAttachment();
-        attachment.setTaskId(taskId);
+        attachment.setTask(task);
         attachment.setFileName(originalFileName);
         attachment.setStoredFileName(storedFileName);
         attachment.setContentType(file.getContentType() == null ? MediaType.APPLICATION_OCTET_STREAM_VALUE : file.getContentType());
@@ -89,7 +90,7 @@ public class AttachmentService {
 
     public List<TaskAttachment> getAttachmentsForTask(Long taskId) {
         taskService.getTaskById(taskId);
-        return attachmentRepository.findByTaskId(taskId);
+        return attachmentRepository.findByTask_Id(taskId);
     }
 
     public Resource loadAsResource(Long attachmentId) {
