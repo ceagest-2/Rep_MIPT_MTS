@@ -1,12 +1,13 @@
 package com.mipt.uriilesnikov.dto;
 
-import com.mipt.uriilesnikov.model.Priority;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.mipt.uriilesnikov.model.Priority;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Task data returned to API clients")
 public class TaskResponseDto {
