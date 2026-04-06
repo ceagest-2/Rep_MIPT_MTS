@@ -11,13 +11,18 @@ app:
 
 spring:
   profiles:
-    active: dev
+    default: dev
   mvc:
     throw-exception-if-no-handler-found: true
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    open-in-view: false
 
 springdoc:
   swagger-ui:
@@ -30,10 +35,24 @@ spring:
   config:
     activate:
       on-profile: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/todo_db
+    username: ${TODO_DB_USER:todo_user}
+    password: ${TODO_DB_PASSWORD:todo_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
 logging:
   level:
     root: DEBUG
-    com.example.todo: DEBUG
+    com.mipt.uriilesnikov: DEBUG
 app:
   log-details: true
 
@@ -41,10 +60,44 @@ app:
 spring:
   config:
     activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:todo_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+---
+spring:
+  config:
+    activate:
       on-profile: prod
+  datasource:
+    url: ${TODO_DB_URL}
+    username: ${TODO_DB_USER}
+    password: ${TODO_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
 logging:
   level:
     root: INFO
-    com.example.todo: WARN
+    com.mipt.uriilesnikov: WARN
 app:
   log-details: false
