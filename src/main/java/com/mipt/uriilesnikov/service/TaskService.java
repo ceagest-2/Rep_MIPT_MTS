@@ -1,14 +1,19 @@
 package com.mipt.uriilesnikov.service;
 
+import com.mipt.uriilesnikov.exception.TaskNotFoundException;
 import com.mipt.uriilesnikov.model.Task;
 import com.mipt.uriilesnikov.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The main task management service.
@@ -54,23 +59,53 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    public long getTotalCount() {
+        return taskRepository.count();
+    }
+
     public Task getTaskById(Long id) {
-        return taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+        return taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
     }
 
     public Task createTask(Task task) {
-        return taskRepository.save(task);
+        if (task.getCreatedAt() == null) {
+            task.setCreatedAt(LocalDateTime.now());
+        }
+        if (task.getTags() == null) {
+            task.setTags(new LinkedHashSet<>());
+        }
+        return save(task);
+    }
+
+    public Task save(Task task) {
+        Task saved = taskRepository.save(task);
+        taskCache.put(saved.getId(), saved);
+        return saved;
     }
 
     public Task updateTask(Long id, Task taskDetails) {
-        Task task = getTaskById(id);
-        task.setTitle(taskDetails.getTitle());
-        task.setDescription(taskDetails.getDescription());
-        task.setCompleted(taskDetails.isCompleted());
-        return taskRepository.save(task);
+        Task existing = getTaskById(id);
+        taskDetails.setId(existing.getId());
+        taskDetails.setCreatedAt(existing.getCreatedAt());
+        if (taskDetails.getTags() == null) {
+            taskDetails.setTags(existing.getTags());
+        }
+        return save(taskDetails);
+    }
+
+    public List<Task> getTasksByIds(Set<Long> ids) {
+        List<Task> tasks = new ArrayList<>();
+        for (Long id : ids) {
+            taskRepository.findById(id).ifPresent(tasks::add);
+        }
+        return tasks;
     }
 
     public void deleteTask(Long id) {
+        if (taskRepository.findById(id).isEmpty()) {
+            throw new TaskNotFoundException(id);
+        }
         taskRepository.deleteById(id);
+        taskCache.remove(id);
     }
 }
