@@ -1,15 +1,8 @@
 package com.mipt.uriilesnikov.controller;
 
-import com.mipt.uriilesnikov.dto.AttachmentResponseDto;
-import com.mipt.uriilesnikov.dto.ErrorResponse;
-import com.mipt.uriilesnikov.model.TaskAttachment;
-import com.mipt.uriilesnikov.service.AttachmentService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
+import java.util.List;
+
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -24,8 +17,17 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URI;
-import java.util.List;
+import com.mipt.uriilesnikov.dto.AttachmentResponseDto;
+import com.mipt.uriilesnikov.dto.ErrorResponse;
+import com.mipt.uriilesnikov.model.TaskAttachment;
+import com.mipt.uriilesnikov.service.AttachmentService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api")

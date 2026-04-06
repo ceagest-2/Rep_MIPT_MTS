@@ -1,8 +1,8 @@
 package com.mipt.uriilesnikov.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalDateTime;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Metadata for a task attachment")
 public class AttachmentResponseDto {
