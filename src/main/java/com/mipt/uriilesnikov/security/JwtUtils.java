@@ -34,15 +34,19 @@ public class JwtUtils {
     }
 
     public AuthToken generateToken(UserDetails userDetails) {
+        return generateToken(userDetails.getUsername(), userDetails.getAuthorities());
+    }
+
+    public AuthToken generateToken(String username, Collection<? extends GrantedAuthority> authorities) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plusSeconds(expirationMinutes * 60);
 
         String token = Jwts.builder()
                 .issuer(issuer)
-                .subject(userDetails.getUsername())
+                .subject(username)
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
-                .claim("auth", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+                .claim("auth", authorities.stream().map(GrantedAuthority::getAuthority).toList())
                 .signWith(signingKey)
                 .compact();
 

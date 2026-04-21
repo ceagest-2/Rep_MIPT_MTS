@@ -25,8 +25,8 @@ app:
   security:
     pepper: ""
     users:
-      user-password-hash: "$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6JmM4n4LhM651c01qmPvvrLpzjAUe"
-      reader-password-hash: "$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6JmM4n4LhM651c01qmPvvrLpzjAUe"
+      user-password-hash: "$2a$10$QxapcPQG.l4LAKO5cKiJ2OdMHNMrz5YfVHKVlTMbsT0PVS6ktg66e"
+      reader-password-hash: "$2a$10$QxapcPQG.l4LAKO5cKiJ2OdMHNMrz5YfVHKVlTMbsT0PVS6ktg66e"
   jwt:
     issuer: "resilient-secure-gateway"
     expiration-minutes: 60

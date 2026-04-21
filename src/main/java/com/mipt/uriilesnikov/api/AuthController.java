@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,8 +30,7 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
 
-        UserDetails principal = (UserDetails) authentication.getPrincipal();
-        JwtUtils.AuthToken token = jwtUtils.generateToken(principal);
+        JwtUtils.AuthToken token = jwtUtils.generateToken(authentication.getName(), authentication.getAuthorities());
         return new AuthLoginResponse(token.value(), "Bearer", token.expiresAt());
     }
 }

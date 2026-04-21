@@ -6,6 +6,7 @@ import com.mipt.uriilesnikov.dto.DeleteTaskResponse;
 import com.mipt.uriilesnikov.dto.TaskDto;
 import com.mipt.uriilesnikov.dto.TaskListResponse;
 import com.mipt.uriilesnikov.dto.TaskUpsertRequest;
+import com.mipt.uriilesnikov.exception.TaskNotFoundException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,9 @@ public class TasksGatewayService {
     }
 
     public TaskDto getTaskFallback(Long id, Throwable throwable) {
+        if (throwable instanceof TaskNotFoundException taskNotFoundException) {
+            throw taskNotFoundException;
+        }
         return TaskDto.degraded(id, fallbackMessage("read task", throwable));
     }
 
