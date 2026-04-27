@@ -23,6 +23,8 @@ import com.mipt.uriilesnikov.model.Task;
 import com.mipt.uriilesnikov.repository.TaskRepository;
 import com.mipt.uriilesnikov.testsupport.MockitoBean;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @SpringBootTest(webEnvironment = WebEnvironment.NONE)
 @ActiveProfiles("test")
 class TaskServiceTest {
@@ -33,6 +35,9 @@ class TaskServiceTest {
     @MockitoBean
     @MockBean
     private TaskRepository taskRepository;
+
+    @MockBean
+    private HttpServletRequest request;
 
     @Test
     void givenExistingTask_whenUpdateStatus_thenTaskIsSavedWithUpdatedCompletionFlag() {
