@@ -1,0 +1,28 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn -B -DskipTests package --file pom.xml
+      - name: Verify Docker For Testcontainers
+        run: docker info
+      - name: Run Unit And Slice Tests
+        run: mvn -B -Dtest=TaskServiceTest,TaskControllerTest test
+      - name: Run Testcontainers Repository Test
+        run: mvn -B -Dtest=TaskRepositoryIntegrationTest test
