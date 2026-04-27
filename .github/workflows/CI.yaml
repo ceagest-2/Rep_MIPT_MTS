@@ -19,6 +19,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - name: Run Tests
-        run: mvn test
+        run: mvn -B -DskipTests package --file pom.xml
+      - name: Verify Docker For Testcontainers
+        run: docker info
+      - name: Run Unit And Slice Tests
+        run: mvn -B -Dtest=TaskServiceTest,TaskControllerTest test
+      - name: Run Testcontainers Repository Test
+        run: mvn -B -Dtest=TaskRepositoryIntegrationTest test
