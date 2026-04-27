@@ -1,60 +1,80 @@
 package com.mipt.uriilesnikov.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 
-import com.mipt.uriilesnikov.exception.TaskNotFoundException;
 import com.mipt.uriilesnikov.model.Priority;
 import com.mipt.uriilesnikov.model.Task;
 import com.mipt.uriilesnikov.repository.TaskRepository;
+import com.mipt.uriilesnikov.testsupport.MockitoBean;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest(webEnvironment = WebEnvironment.NONE)
+@ActiveProfiles("test")
 class TaskServiceTest {
 
-    @Mock
+    @Autowired
+    private TaskService taskService;
+
+    @MockitoBean
+    @MockBean
     private TaskRepository taskRepository;
 
-    @InjectMocks
-    private TaskService service;
-
     @Test
-    void createTask_shouldPopulateMetadataAndCount() {
+    void givenExistingTask_whenUpdateStatus_thenTaskIsSavedWithUpdatedCompletionFlag() {
+        Long taskId = 42L;
+        LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
+
+        Task existing = new Task();
+        existing.setId(taskId);
+        existing.setTitle("Initial title");
+        existing.setDescription("Initial description");
+        existing.setCompleted(false);
+        existing.setCreatedAt(createdAt);
+        existing.setDueDate(LocalDate.now().plusDays(3));
+        existing.setPriority(Priority.MEDIUM);
+        existing.setTags(new LinkedHashSet<>());
+
+        Task taskDetails = new Task();
+        taskDetails.setTitle("Initial title");
+        taskDetails.setDescription("Initial description");
+        taskDetails.setCompleted(true);
+        taskDetails.setDueDate(LocalDate.now().plusDays(3));
+        taskDetails.setPriority(Priority.MEDIUM);
+        taskDetails.setTags(new LinkedHashSet<>());
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existing));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
-            Task toSave = invocation.getArgument(0);
-            if (toSave.getId() == null) {
-                toSave.setId(1L);
-            }
-            return toSave;
+            Task saved = invocation.getArgument(0);
+            saved.setLastModifiedAt(LocalDateTime.now());
+            return saved;
         });
-        when(taskRepository.count()).thenReturn(1L);
 
-        Task task = new Task();
-        task.setTitle("Task service test");
-        task.setDescription("desc");
-        task.setPriority(Priority.MEDIUM);
-        task.setDueDate(LocalDate.now().plusDays(2));
+        Task updated = taskService.updateTask(taskId, taskDetails);
 
-        Task created = service.createTask(task);
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, times(1)).save(taskCaptor.capture());
 
-        assertNotNull(created.getId());
-        assertNotNull(created.getCreatedAt());
-        assertEquals(1L, service.getTotalCount());
-    }
-
-    @Test
-    void getTaskById_shouldThrowWhenMissing() {
-        when(taskRepository.findById(123L)).thenReturn(Optional.empty());
-        assertThrows(TaskNotFoundException.class, () -> service.getTaskById(123L));
+        Task savedTask = taskCaptor.getValue();
+        assertEquals(taskId, savedTask.getId());
+        assertEquals(createdAt, savedTask.getCreatedAt());
+        assertEquals(true, savedTask.isCompleted());
+        assertEquals(taskId, updated.getId());
+        assertEquals(true, updated.isCompleted());
     }
 }
