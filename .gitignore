@@ -1,0 +1,13 @@
+target/
+build/
+.idea/
+*.iml
+uploads/
+local.properties
+
+# Maven wrapper artifacts
+.mvn/wrapper/maven-wrapper.jar
+
+# OS files
+.DS_Store
+Thumbs.db
